@@ -188,8 +188,11 @@ def diff_directory(dirs1, dirs2):
 
     with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, True) as zf:
         for dp in diffpaths:
-            print "Adding: " + dp
-            zf.write(dp)
+            try:
+                print "Adding: " + dp
+                zf.write(dp)
+            except:
+                print "Skipped file"
 
 def diff_values(values1, values2):
 
@@ -266,34 +269,61 @@ reghiveval[_winreg.HKEY_LOCAL_MACHINE]=_winreg.HKEY_LOCAL_MACHINE
 reghiveval[_winreg.HKEY_USERS]=_winreg.HKEY_USERS
 reghiveval[_winreg.HKEY_CURRENT_CONFIG]=_winreg.HKEY_CURRENT_CONFIG
 
+
 def reghexstr(val):
-    valstr = ""
-    first=True
-    for x in val:
-        if not first:
-            valstr += ","
-        else:
-            first=False
-        valstr += "{0:02x}".format(x)
+    valstr = u""
+    if val:
+        first=True
+        for x in val:
+            if not first:
+                valstr += u","
+            else:
+                first=False
+            valstr += u"{0:02x}".format(x)
     return valstr
 
+
 def regvaluestring(val, vtype):
-    if vtype == _winreg.REG_DWORD or vtype ==_winreg.REG_DWORD_LITTLE_ENDIAN or _winreg.REG_DWORD_BIG_ENDIAN:
+    if vtype == _winreg.REG_DWORD or vtype == _winreg.REG_DWORD_LITTLE_ENDIAN or vtype == _winreg.REG_DWORD_BIG_ENDIAN:
         valstr = u"{0:08x}".format(val)
-        pass
-    elif vtype == _winreg.REG_SZ or vtype == _winreg.REG_EXPAND_SZ:
-        isprint = True
-        val = unicode(val)
-        for x in val:
-            if x < 32:
-                isprint = False
-                break
-        if isprint:
-            valstr = u"\"" + val.replace(u"\\",u"\\\\").replace(u"\"",u"\\\"")
+    elif vtype == _winreg.REG_EXPAND_SZ:
+        valstr = reghexstr(bytearray(val, "utf-16-le"))
+        if len(valstr) > 0:
+            valstr += u","
+        valstr += u"00,00"
+        valstr = u"hex({0:1x}):".format(vtype) + valstr
+    elif vtype == _winreg.REG_SZ:
+        if val:
+            isprint = True
+            val = unicode(val)
+            for x in val:
+                if ord(x) < 32:
+                    isprint = False
+                    break
+            if isprint:
+                valstr = u"\"" + val.replace(u"\\", u"\\\\").replace(u"\"", u"\\\"") + u"\""
+            else:
+                valstr = reghexstr(bytearray(val, "utf-16-le"))
+                if len(valstr) > 0:
+                    valstr += u","
+                valstr += u"00,00"
+                valstr = u"hex({0:1x}):".format(vtype) + valstr
         else:
-            valstr = u"hex({0:1x}):".format(vtype) + reghexstr(bytearray(val, "utf-16-le"))
+            valstr = u"hex({0:1x}):".format(vtype)
     elif vtype == _winreg.REG_MULTI_SZ:
-        valstr = u"hex({0:1x}):".format(vtype) + reghexstr(bytearray(val, "utf-16-le"))
+        valstr = u""
+        if val:
+            for s in val:
+                if len(valstr) > 0:
+                    valstr += u","
+                valstr += reghexstr(bytearray(s, "utf-16-le"))
+                if len(valstr) > 0:
+                    valstr += u","
+                valstr += u"00,00"
+            if len(valstr) > 0:
+                valstr += u","
+            valstr += u"00,00"
+        valstr = u"hex({0:1x}):".format(vtype) + valstr
     else:
         valstr = u"hex({0:1x}):".format(vtype) + reghexstr(bytearray(val))
     return valstr
@@ -315,7 +345,7 @@ def write_regfile(diffkeys):
 
         for (vname, vhash, vtype) in diffvalues:
             val = _winreg.QueryValueEx(key, vname)[0]
-            f.write(u"\"{0}\"={1}\r\n".format(vname, regvaluestring(val, vtype).encode('utf-16-le')))
+            f.write(u"\"{0}\"={1}\r\n".format(vname, regvaluestring(val, vtype)).encode('utf-16-le'))
 
         f.write(u"\r\n".encode('utf-16-le'))
 
