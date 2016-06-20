@@ -123,15 +123,15 @@ def snap_registry(reg):
     regparts = reg.split("\\", 1)
     if len(regparts) == 1:
         rootkey = regparts[0]
-        keypath = ""
+        rootkeypath = ""
     else:
         rootkey = regparts[0]
-        keypath = regparts[1]
+        rootkeypath = regparts[1]
 
     rootkey = reghiveval[rootkey]
     snap = []
 
-    for (keypath, key, modft) in walk_registry(rootkey, keypath):
+    for (keypath, key, modft) in walk_registry(rootkey, rootkeypath):
 
         values = []
         for (vname, vhash, vtype) in key_values(key):
@@ -336,7 +336,12 @@ def write_regfile(diffkeys):
     f.write(codecs.BOM_UTF16_LE)
     f.write(u"Windows Registry Editor Version 5.00\r\n\r\n".encode('utf-16-le'))
     for (hkey, keypath, diffvalues) in diffkeys:
-        key = _winreg.OpenKey(hkey, keypath, 0, wow64key | _winreg.KEY_READ)
+        print "Writing registry key: {0}\\{1}".format(reghivestr(hkey),keypath)
+        try:
+            key = _winreg.OpenKey(hkey, keypath, 0, wow64key | _winreg.KEY_READ)
+        except:
+            print "Unable to open key"
+            continue
 
         if not keypath:
             f.write(u"[{0}]\r\n".format(reghivestr[hkey]).encode('utf-16-le'))
