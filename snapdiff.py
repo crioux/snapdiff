@@ -364,8 +364,8 @@ def write_regfile(diffkeys):
 
 
 def diff_all(snap1, snap2):
-    diff_directory(snap1["dirs"], snap2["dirs"])
     diff_registry(snap1["regs"], snap2["regs"])
+    diff_directory(snap1["dirs"], snap2["dirs"])
 
 def main():
 
@@ -391,7 +391,7 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     if len(args.dir) == 0:
-        args.dir = [os.path.curdir]
+        args.dir = ["C:\\"]
     if len(args.reg) == 0:
         args.reg = ["HKLM", "HKCU"]
 
