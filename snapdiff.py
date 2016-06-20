@@ -413,7 +413,7 @@ if __name__=="__main__":
     if len(args.dir) == 0:
         args.dir = ["C:\\"]
     if len(args.reg) == 0:
-        args.reg = ["HKLM", "HKCU"]
+        args.reg = ["HKLM"]
     if len(args.exclude) == 0:
         args.exclude = [r"^C:\\ProgramData\\Package Cache.*",
                         r"^C:\\Users.*",
