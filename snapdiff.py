@@ -336,7 +336,7 @@ def write_regfile(diffkeys):
     f.write(codecs.BOM_UTF16_LE)
     f.write(u"Windows Registry Editor Version 5.00\r\n\r\n".encode('utf-16-le'))
     for (hkey, keypath, diffvalues) in diffkeys:
-        print "Writing registry key: {0}\\{1}".format(reghivestr(hkey),keypath)
+        print "Writing registry key: {0}\\{1}".format(reghivestr[hkey], keypath)
         try:
             key = _winreg.OpenKey(hkey, keypath, 0, wow64key | _winreg.KEY_READ)
         except:
