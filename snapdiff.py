@@ -411,12 +411,12 @@ if __name__=="__main__":
     if len(args.reg) == 0:
         args.reg = ["HKLM", "HKCU"]
     if len(args.exclude) == 0:
-        args.exclude = [r"^C:\ProgramData\Package Cache.*",
-                        r"^C:\Users.*",
-                        r"^C:\Windows\Installer.*",
-                        r"^C:\Windows\Logs.*",
-                        r"^C:\Windows\Servicing.*",
-                        r"^C:\Windows\SoftwareDistribution.*"]
+        args.exclude = [r"^C:\\ProgramData\\Package Cache.*",
+                        r"^C:\\Users.*",
+                        r"^C:\\Windows\\Installer.*",
+                        r"^C:\\Windows\\Logs.*",
+                        r"^C:\\Windows\\Servicing.*",
+                        r"^C:\\Windows\\SoftwareDistribution.*"]
 
     if len(args.dir) == 1 and (args.dir[0]=='none' or args.dir[0]==""):
         args.dir = []
@@ -426,7 +426,7 @@ if __name__=="__main__":
         args.exclude = []
 
     for exc in args.exclude:
-        re_exclude.append( re.compile(exc))
+        re_exclude.append(re.compile(exc, re.IGNORECASE))
 
     main()
 
