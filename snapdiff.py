@@ -169,7 +169,7 @@ def match_excludes(p):
     return False
 
 
-def diff_directory(dirs1, dirs2):
+def diff_directory(zf, dirs1, dirs2):
     d1set = set()
 
     # Get all paths from first snap into fast set
@@ -199,15 +199,12 @@ def diff_directory(dirs1, dirs2):
                     if fp not in d1set:
                         diffpaths.append(fp)
 
-    print "Zipping diff to: " + args.out
-
-    with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, True) as zf:
-        for dp in diffpaths:
-            try:
-                print "Adding: " + dp
-                zf.write(dp)
-            except:
-                print "Skipped file"
+    for dp in diffpaths:
+        try:
+            zf.write(dp)
+            print "Added: " + dp
+        except:
+            print "Skipped: " + dp
 
 def diff_values(values1, values2):
 
@@ -224,7 +221,7 @@ def diff_values(values1, values2):
     return diffvalues
 
 
-def diff_registry(regs1, regs2):
+def diff_registry(zf, regs1, regs2):
 
     k1set = dict()
 
@@ -248,7 +245,7 @@ def diff_registry(regs1, regs2):
                 diffkeys.append((hkey, keypath, values))
 
     # Write regfile
-    write_regfile(diffkeys)
+    write_regfile(zf, diffkeys)
 
 reghivestr={}
 reghivestr["HKEY_CLASSES_ROOT"]="HKEY_CLASSES_ROOT"
@@ -344,7 +341,7 @@ def regvaluestring(val, vtype):
     return valstr
 
 
-def write_regfile(diffkeys):
+def write_regfile(zf, diffkeys):
 
     f = tempfile.NamedTemporaryFile(delete=False)
 
@@ -371,16 +368,15 @@ def write_regfile(diffkeys):
 
     f.close()
 
-    with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, True) as zf:
-        print "Writing registry diff"
-        zf.write(f.name, "snapdiff.reg")
+    print "Writing registry diff"
+    zf.write(f.name, "snapdiff.reg")
 
     os.remove(f.name)
 
 
-def diff_all(snap1, snap2):
-    diff_registry(snap1["regs"], snap2["regs"])
-    diff_directory(snap1["dirs"], snap2["dirs"])
+def diff_all(zf, snap1, snap2):
+    diff_registry(zf, snap1["regs"], snap2["regs"])
+    diff_directory(zf, snap1["dirs"], snap2["dirs"])
 
 def main():
 
@@ -390,7 +386,9 @@ def main():
 
     snap2 = snap_all()
 
-    diff_all(snap1, snap2)
+    with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, True) as zf:
+        print "Zipping diff to: " + args.out
+        diff_all(zf, snap1, snap2)
 
     sys.exit(0)
 
