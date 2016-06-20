@@ -6,16 +6,18 @@ import tempfile
 import argparse
 import hashlib
 import codecs
+import re
 import platform
 
 wow64key = 0
+re_exclude = []
+
 
 def Is64Windows():
     return 'PROGRAMFILES(X86)' in os.environ
 
 if Is64Windows():
     wow64key = _winreg.KEY_WOW64_64KEY
-
 
 def subkeys(key, numsubkeys):
 
@@ -160,6 +162,13 @@ def snap_all():
 
     return snap
 
+def match_excludes(p):
+    for exc in re_exclude:
+        if exc.match(p):
+            return True
+    return False
+
+
 def diff_directory(dirs1, dirs2):
     d1set = set()
 
@@ -167,9 +176,13 @@ def diff_directory(dirs1, dirs2):
     for dir in dirs1:
         for (root, dirs, files) in dir:
             for d in dirs:
-                d1set.add(os.path.join(root, d))
+                d1path = os.path.join(root, d)
+                if not match_excludes(d1path):
+                    d1set.add(d1path)
             for f in files:
-                d1set.add(os.path.join(root, f))
+                f1path = os.path.join(root, f)
+                if not match_excludes(f1path):
+                    d1set.add(f1path)
 
     # Build list of all paths in the second snap that are not in the first snap
     diffpaths = []
@@ -177,12 +190,14 @@ def diff_directory(dirs1, dirs2):
         for root, dirs, files in dir:
             for d in dirs:
                 dp = os.path.join(root, d)
-                if dp not in d1set:
-                    diffpaths.append(dp)
+                if not match_excludes(dp):
+                    if dp not in d1set:
+                        diffpaths.append(dp)
             for f in files:
                 fp = os.path.join(root, f)
-                if fp not in d1set:
-                    diffpaths.append(fp)
+                if not match_excludes(fp):
+                    if fp not in d1set:
+                        diffpaths.append(fp)
 
     print "Zipping diff to: " + args.out
 
@@ -387,6 +402,7 @@ if __name__=="__main__":
     parser.add_argument("-r", "--reg", action='append', default=[],
                         help="Select registry hives/subkeys to watch")
     parser.add_argument("-o", "--out", type=str, default="snapdiff.zip", help="Name of output zipfile")
+    parser.add_argument("-x", "--exclude", action='append', default=[], help="Exclude regex patterns from filesystem")
     parser.add_help = True
     args = parser.parse_args()
 
@@ -394,6 +410,23 @@ if __name__=="__main__":
         args.dir = ["C:\\"]
     if len(args.reg) == 0:
         args.reg = ["HKLM", "HKCU"]
+    if len(args.exclude) == 0:
+        args.exclude = [r"^C:\ProgramData\Package Cache.*",
+                        r"^C:\Users.*",
+                        r"^C:\Windows\Installer.*",
+                        r"^C:\Windows\Logs.*",
+                        r"^C:\Windows\Servicing.*",
+                        r"^C:\Windows\SoftwareDistribution.*"]
+
+    if len(args.dir) == 1 and (args.dir[0]=='none' or args.dir[0]==""):
+        args.dir = []
+    if len(args.reg) == 1 and (args.reg[0]=='none' or args.reg[0]==""):
+        args.reg = []
+    if len(args.exclude) == 1 and (args.exclude[0]=='none' or args.exclude[0]==""):
+        args.exclude = []
+
+    for exc in args.exclude:
+        re_exclude.append( re.compile(exc))
 
     main()
 
