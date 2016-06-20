@@ -201,7 +201,13 @@ def diff_directory(zf, dirs1, dirs2):
 
     for dp in diffpaths:
         try:
-            zf.write(dp)
+            if os.path.isabs(dp):
+                # If absolute path c:\foo\bar, then write to location c\foo\bar
+                dpname = dp.replace(":", "", 1)
+            else:
+                dpname = dp
+
+            zf.write(dp, dpname)
             print "Added: " + dp
         except:
             print "Skipped: " + dp
