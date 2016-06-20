@@ -368,7 +368,10 @@ def write_regfile(zf, diffkeys):
 
         for (vname, vhash, vtype) in diffvalues:
             val = _winreg.QueryValueEx(key, vname)[0]
-            f.write(u"\"{0}\"={1}\r\n".format(vname, regvaluestring(val, vtype)).encode('utf-16-le'))
+            if not vname:
+                f.write(u"@={0}\r\n".format(regvaluestring(val, vtype)).encode('utf-16-le'))
+            else:
+                f.write(u"\"{0}\"={1}\r\n".format(vname, regvaluestring(val, vtype)).encode('utf-16-le'))
 
         f.write(u"\r\n".encode('utf-16-le'))
 
