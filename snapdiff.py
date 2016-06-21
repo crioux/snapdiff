@@ -210,7 +210,10 @@ def diff_directory(zf, dirs1, dirs2):
             if os.path.isabs(dp):
                 # If absolute path c:\foo\bar, then write to location c\foo\bar
                 (drive, path) = dp.split(u":", 1)
-                dpname = u"drive_{0}{1}".format(drive.lower(), path)
+                if args.includedrive:
+                    dpname = u"{0}{1}".format(drive.lower(), path)
+                else:
+                    dpname = path[1:]
             else:
                 dpname = dp
 
@@ -424,6 +427,7 @@ if __name__=="__main__":
     parser.add_argument("-r", "--reg", type=unicode, action='append', default=[],
                         help="Select registry hives/subkeys to watch")
     parser.add_argument("-o", "--out", type=unicode, default=u"snapdiff.zip", help="Name of output zipfile")
+    parser.add_argument("--includedrive", action="store_true", default=False, help="Store drive letter in zipfile paths")
     parser.add_argument("--excludedir", type=unicode, action='append', default=[], help="Exclude regex patterns from filesystem")
     parser.add_argument("--excludereg", type=unicode, action='append', default=[], help="Exclude regex patterns from registry")
 
