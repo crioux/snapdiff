@@ -292,7 +292,7 @@ reghiveval[_winreg.HKEY_CURRENT_CONFIG]=_winreg.HKEY_CURRENT_CONFIG
 def reghexstr(val):
     valstr = u""
     if val:
-        first=True
+        first = True
         for x in val:
             if not first:
                 valstr += u","
@@ -306,7 +306,10 @@ def regquotestr(s):
 
 
 def regvaluestring(val, vtype):
-    if vtype == _winreg.REG_DWORD:
+
+    if not val:
+        valstr = u"hex({0:1x}):".format(vtype)
+    elif vtype == _winreg.REG_DWORD:
         valstr = u"dword:{0:08x}".format(val)
     elif vtype == _winreg.REG_EXPAND_SZ:
         valstr = reghexstr(bytearray(val, "utf-16-le"))
@@ -315,39 +318,35 @@ def regvaluestring(val, vtype):
         valstr += u"00,00"
         valstr = u"hex({0:1x}):".format(vtype) + valstr
     elif vtype == _winreg.REG_SZ:
-        if val:
-            isprint = True
-            val = unicode(val)
-            for x in val:
-                if ord(x) < 32:
-                    isprint = False
-                    break
-            if isprint:
-                valstr = regquotestr(val)
-            else:
-                valstr = reghexstr(bytearray(val, "utf-16-le"))
-                if len(valstr) > 0:
-                    valstr += u","
-                valstr += u"00,00"
-                valstr = u"hex({0:1x}):".format(vtype) + valstr
+        isprint = True
+        val = unicode(val)
+        for x in val:
+            if ord(x) < 32:
+                isprint = False
+                break
+        if isprint:
+            valstr = regquotestr(val)
         else:
-            valstr = u"hex({0:1x}):".format(vtype)
-    elif vtype == _winreg.REG_MULTI_SZ:
-        valstr = u""
-        if val:
-            for s in val:
-                if len(valstr) > 0:
-                    valstr += u","
-                valstr += reghexstr(bytearray(s, "utf-16-le"))
-                if len(valstr) > 0:
-                    valstr += u","
-                valstr += u"00,00"
+            valstr = reghexstr(bytearray(val, "utf-16-le"))
             if len(valstr) > 0:
                 valstr += u","
             valstr += u"00,00"
-        valstr = u"hex({0:1x}):".format(vtype) + valstr
+            valstr = u"hex({0:1x}):".format(vtype) + valstr
+    elif vtype == _winreg.REG_MULTI_SZ:
+        valstr = u""
+        for s in val:
+            if len(valstr) > 0:
+                valstr += u","
+            valstr += reghexstr(bytearray(s, "utf-16-le"))
+            if len(valstr) > 0:
+                valstr += u","
+            valstr += u"00,00"
+        if len(valstr) > 0:
+            valstr += u","
+        valstr = u"hex({0:1x}):".format(vtype) + valstr + u"00,00"
     else:
         valstr = u"hex({0:1x}):".format(vtype) + reghexstr(bytearray(val))
+
     return valstr
 
 
