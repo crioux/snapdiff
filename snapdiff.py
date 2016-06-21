@@ -10,7 +10,8 @@ import re
 import platform
 
 wow64key = 0
-re_exclude = []
+re_excludedir = []
+re_excludereg = []
 
 
 def Is64Windows():
@@ -162,12 +163,17 @@ def snap_all():
 
     return snap
 
-def match_excludes(p):
-    for exc in re_exclude:
+def match_excludedir(p):
+    for exc in re_excludedir:
         if exc.match(p):
             return True
     return False
 
+def match_excludereg(p):
+    for exc in re_excludereg:
+        if exc.match(p):
+            return True
+    return False
 
 def diff_directory(zf, dirs1, dirs2):
     d1set = set()
@@ -177,11 +183,11 @@ def diff_directory(zf, dirs1, dirs2):
         for (root, dirs, files) in dir:
             for d in dirs:
                 d1path = os.path.join(root, d)
-                if not match_excludes(d1path):
+                if not match_excludedir(d1path):
                     d1set.add(d1path)
             for f in files:
                 f1path = os.path.join(root, f)
-                if not match_excludes(f1path):
+                if not match_excludedir(f1path):
                     d1set.add(f1path)
 
     # Build list of all paths in the second snap that are not in the first snap
@@ -190,12 +196,12 @@ def diff_directory(zf, dirs1, dirs2):
         for root, dirs, files in dir:
             for d in dirs:
                 dp = os.path.join(root, d)
-                if not match_excludes(dp):
+                if not match_excludedir(dp):
                     if dp not in d1set:
                         diffpaths.append(dp)
             for f in files:
                 fp = os.path.join(root, f)
-                if not match_excludes(fp):
+                if not match_excludedir(fp):
                     if fp not in d1set:
                         diffpaths.append(fp)
 
@@ -235,21 +241,23 @@ def diff_registry(zf, regs1, regs2):
     # Get all keys in the first set
     for reglist in regs1:
         for (hkey, keypath, modft, values) in reglist:
-            kindex = reghivestr[hkey] + "/" + keypath
-            k1set[kindex] = (modft, values)
+            kindex = reghivestr[hkey] + u"\\" + keypath
+            if not match_excludereg(kindex):
+                k1set[kindex] = (modft, values)
 
     # Get all keys in the second set
     diffkeys = []
     for reglist in regs2:
         for (hkey, keypath, modft, values) in reglist:
-            kindex = reghivestr[hkey] + "/" + keypath
-            if kindex in k1set:
-                (k1modft, k1values) = k1set[kindex]
-                if modft != k1modft:
-                    diffvalues = diff_values(k1values, values)
-                    diffkeys.append((hkey, keypath, diffvalues))
-            else:
-                diffkeys.append((hkey, keypath, values))
+            kindex = reghivestr[hkey] + u"\\" + keypath
+            if not match_excludereg(kindex):
+                if kindex in k1set:
+                    (k1modft, k1values) = k1set[kindex]
+                    if modft != k1modft:
+                        diffvalues = diff_values(k1values, values)
+                        diffkeys.append((hkey, keypath, diffvalues))
+                else:
+                    diffkeys.append((hkey, keypath, values))
 
     # Write regfile
     write_regfile(zf, diffkeys)
@@ -370,11 +378,15 @@ def write_regfile(zf, diffkeys):
             f.write(u"[{0}\\{1}]\r\n".format(reghivestr[hkey], keypath).encode('utf-16-le'))
 
         for (vname, vhash, vtype) in diffvalues:
-            val = _winreg.QueryValueEx(key, vname)[0]
-            if not vname:
-                f.write(u"@={0}\r\n".format(regvaluestring(val, vtype)).encode('utf-16-le'))
-            else:
-                f.write(u"{0}={1}\r\n".format(regquotestr(vname), regvaluestring(val, vtype)).encode('utf-16-le'))
+            try:
+                val = _winreg.QueryValueEx(key, vname)[0]
+                if not vname:
+                    f.write(u"@={0}\r\n".format(regvaluestring(val, vtype)).encode('utf-16-le'))
+                else:
+                    f.write(u"{0}={1}\r\n".format(regquotestr(vname), regvaluestring(val, vtype)).encode('utf-16-le'))
+            except:
+                print u"Unable to query value"
+                continue
 
         f.write(u"\r\n".encode('utf-16-le'))
 
@@ -412,31 +424,40 @@ if __name__=="__main__":
     parser.add_argument("-r", "--reg", type=unicode, action='append', default=[],
                         help="Select registry hives/subkeys to watch")
     parser.add_argument("-o", "--out", type=unicode, default=u"snapdiff.zip", help="Name of output zipfile")
-    parser.add_argument("-x", "--exclude", type=unicode, action='append', default=[], help="Exclude regex patterns from filesystem")
+    parser.add_argument("--excludedir", type=unicode, action='append', default=[], help="Exclude regex patterns from filesystem")
+    parser.add_argument("--excludereg", type=unicode, action='append', default=[], help="Exclude regex patterns from registry")
+
     parser.add_help = True
     args = parser.parse_args()
 
     if len(args.dir) == 0:
         args.dir = [u"C:\\"]
     if len(args.reg) == 0:
-        args.reg = [u"HKLM"]
-    if len(args.exclude) == 0:
-        args.exclude = [ur"^C:\\ProgramData\\Package Cache.*",
-                        ur"^C:\\Users.*",
-                        ur"^C:\\Windows\\Installer.*",
-                        ur"^C:\\Windows\\Logs.*",
-                        ur"^C:\\Windows\\Servicing.*",
-                        ur"^C:\\Windows\\SoftwareDistribution.*"]
+        args.reg = [u"HKEY_LOCAL_MACHINE"]
+    if len(args.excludedir) == 0:
+        args.excludedir = [ur"^C:\\ProgramData\\Package Cache.*",
+                           ur"^C:\\Users.*",
+                           ur"^C:\\Windows\\Installer.*",
+                           ur"^C:\\Windows\\Logs.*",
+                           ur"^C:\\Windows\\Servicing.*",
+                           ur"^C:\\Windows\\SoftwareDistribution.*"]
+    if len(args.excludereg) == 0:
+        args.excludereg = [ur"^HKEY_LOCAL_MACHINE\\COMPONENTS.*",
+                           ur"^HKEY_LOCAL_MACHINE\\Schema.*"]
 
     if len(args.dir) == 1 and (args.dir[0] == u"none" or args.dir[0] == u""):
         args.dir = []
     if len(args.reg) == 1 and (args.reg[0] == u"none" or args.reg[0] == u""):
         args.reg = []
-    if len(args.exclude) == 1 and (args.exclude[0] == u"none" or args.exclude[0] == u""):
-        args.exclude = []
+    if len(args.excludedir) == 1 and (args.excludedir[0] == u"none" or args.excludedir[0] == u""):
+        args.excludedir = []
+    if len(args.excludereg) == 1 and (args.excludereg[0] == u"none" or args.excludereg[0] == u""):
+        args.excludereg = []
 
-    for exc in args.exclude:
-        re_exclude.append(re.compile(exc, re.IGNORECASE))
+    for exc in args.excludedir:
+        re_excludedir.append(re.compile(exc, re.IGNORECASE))
+    for exc in args.excludereg:
+        re_excludereg.append(re.compile(exc, re.IGNORECASE))
 
     main()
 
