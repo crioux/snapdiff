@@ -301,6 +301,9 @@ def reghexstr(val):
             valstr += u"{0:02x}".format(x)
     return valstr
 
+def regquotestr(s):
+    return u"\"" + s.replace(u"\\", u"\\\\").replace(u"\"", u"\\\"") + u"\""
+
 
 def regvaluestring(val, vtype):
     if vtype == _winreg.REG_DWORD:
@@ -320,7 +323,7 @@ def regvaluestring(val, vtype):
                     isprint = False
                     break
             if isprint:
-                valstr = u"\"" + val.replace(u"\\", u"\\\\").replace(u"\"", u"\\\"") + u"\""
+                valstr = regquotestr(val)
             else:
                 valstr = reghexstr(bytearray(val, "utf-16-le"))
                 if len(valstr) > 0:
@@ -372,7 +375,7 @@ def write_regfile(zf, diffkeys):
             if not vname:
                 f.write(u"@={0}\r\n".format(regvaluestring(val, vtype)).encode('utf-16-le'))
             else:
-                f.write(u"\"{0}\"={1}\r\n".format(vname, regvaluestring(val, vtype)).encode('utf-16-le'))
+                f.write(u"{0}={1}\r\n".format(regquotestr(vname), regvaluestring(val, vtype)).encode('utf-16-le'))
 
         f.write(u"\r\n".encode('utf-16-le'))
 
