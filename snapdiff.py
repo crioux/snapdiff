@@ -111,7 +111,7 @@ def key_values(key):
 
 def snap_directory(dir):
     dir = os.path.abspath(dir)
-    print "Snapping directory '{0}'".format(dir)
+    print u"Snapping directory '{0}'".format(dir)
     snap = []
 
     for root, dirs, files in os.walk(dir, topdown=False):
@@ -120,7 +120,7 @@ def snap_directory(dir):
     return snap
 
 def snap_registry(reg):
-    print "Snapping registry '{0}'".format(reg)
+    print u"Snapping registry '{0}'".format(reg)
 
     regparts = reg.split("\\", 1)
     if len(regparts) == 1:
@@ -203,7 +203,8 @@ def diff_directory(zf, dirs1, dirs2):
         try:
             if os.path.isabs(dp):
                 # If absolute path c:\foo\bar, then write to location c\foo\bar
-                dpname = dp.replace(":", "", 1)
+                (drive, path) = dp.split(":", 1)
+                dpname = "drive_"+drive.lower()
             else:
                 dpname = dp
 
@@ -254,33 +255,33 @@ def diff_registry(zf, regs1, regs2):
     write_regfile(zf, diffkeys)
 
 reghivestr={}
-reghivestr["HKEY_CLASSES_ROOT"]="HKEY_CLASSES_ROOT"
-reghivestr["HKEY_CURRENT_USER"]="HKEY_CURRENT_USER"
-reghivestr["HKEY_LOCAL_MACHINE"]="HKEY_LOCAL_MACHINE"
-reghivestr["HKEY_USERS"]="HKEY_USERS"
-reghivestr["HKEY_CURRENT_CONFIG"]="HKEY_CURRENT_CONFIG"
-reghivestr["HKCR"]="HKEY_CLASSES_ROOT"
-reghivestr["HKCU"]="HKEY_CURRENT_USER"
-reghivestr["HKLM"]="HKEY_LOCAL_MACHINE"
-reghivestr["HKU"]="HKEY_USERS"
-reghivestr["HKCC"]="HKEY_CURRENT_CONFIG"
-reghivestr[_winreg.HKEY_CLASSES_ROOT]="HKEY_CLASSES_ROOT"
-reghivestr[_winreg.HKEY_CURRENT_USER]="HKEY_CURRENT_USER"
-reghivestr[_winreg.HKEY_LOCAL_MACHINE]="HKEY_LOCAL_MACHINE"
-reghivestr[_winreg.HKEY_USERS]="HKEY_USERS"
-reghivestr[_winreg.HKEY_CURRENT_CONFIG]="HKEY_CURRENT_CONFIG"
+reghivestr[u"HKEY_CLASSES_ROOT"]=u"HKEY_CLASSES_ROOT"
+reghivestr[u"HKEY_CURRENT_USER"]=u"HKEY_CURRENT_USER"
+reghivestr[u"HKEY_LOCAL_MACHINE"]=u"HKEY_LOCAL_MACHINE"
+reghivestr[u"HKEY_USERS"]=u"HKEY_USERS"
+reghivestr[u"HKEY_CURRENT_CONFIG"]=u"HKEY_CURRENT_CONFIG"
+reghivestr[u"HKCR"]=u"HKEY_CLASSES_ROOT"
+reghivestr[u"HKCU"]=u"HKEY_CURRENT_USER"
+reghivestr[u"HKLM"]=u"HKEY_LOCAL_MACHINE"
+reghivestr[u"HKU"]=u"HKEY_USERS"
+reghivestr[u"HKCC"]=u"HKEY_CURRENT_CONFIG"
+reghivestr[_winreg.HKEY_CLASSES_ROOT]=u"HKEY_CLASSES_ROOT"
+reghivestr[_winreg.HKEY_CURRENT_USER]=u"HKEY_CURRENT_USER"
+reghivestr[_winreg.HKEY_LOCAL_MACHINE]=u"HKEY_LOCAL_MACHINE"
+reghivestr[_winreg.HKEY_USERS]=u"HKEY_USERS"
+reghivestr[_winreg.HKEY_CURRENT_CONFIG]=u"HKEY_CURRENT_CONFIG"
 
 reghiveval={}
-reghiveval["HKEY_CLASSES_ROOT"]=_winreg.HKEY_CLASSES_ROOT
-reghiveval["HKEY_CURRENT_USER"]=_winreg.HKEY_CURRENT_USER
-reghiveval["HKEY_LOCAL_MACHINE"]=_winreg.HKEY_LOCAL_MACHINE
-reghiveval["HKEY_USERS"]=_winreg.HKEY_USERS
-reghiveval["HKEY_CURRENT_CONFIG"]=_winreg.HKEY_CURRENT_CONFIG
-reghiveval["HKCR"]=_winreg.HKEY_CLASSES_ROOT
-reghiveval["HKCU"]=_winreg.HKEY_CURRENT_USER
-reghiveval["HKLM"]=_winreg.HKEY_LOCAL_MACHINE
-reghiveval["HKU"]=_winreg.HKEY_USERS
-reghiveval["HKCC"]=_winreg.HKEY_CURRENT_CONFIG
+reghiveval[u"HKEY_CLASSES_ROOT"]=_winreg.HKEY_CLASSES_ROOT
+reghiveval[u"HKEY_CURRENT_USER"]=_winreg.HKEY_CURRENT_USER
+reghiveval[u"HKEY_LOCAL_MACHINE"]=_winreg.HKEY_LOCAL_MACHINE
+reghiveval[u"HKEY_USERS"]=_winreg.HKEY_USERS
+reghiveval[u"HKEY_CURRENT_CONFIG"]=_winreg.HKEY_CURRENT_CONFIG
+reghiveval[u"HKCR"]=_winreg.HKEY_CLASSES_ROOT
+reghiveval[u"HKCU"]=_winreg.HKEY_CURRENT_USER
+reghiveval[u"HKLM"]=_winreg.HKEY_LOCAL_MACHINE
+reghiveval[u"HKU"]=_winreg.HKEY_USERS
+reghiveval[u"HKCC"]=_winreg.HKEY_CURRENT_CONFIG
 reghiveval[_winreg.HKEY_CLASSES_ROOT]=_winreg.HKEY_CLASSES_ROOT
 reghiveval[_winreg.HKEY_CURRENT_USER]=_winreg.HKEY_CURRENT_USER
 reghiveval[_winreg.HKEY_LOCAL_MACHINE]=_winreg.HKEY_LOCAL_MACHINE
@@ -354,11 +355,11 @@ def write_regfile(zf, diffkeys):
     f.write(codecs.BOM_UTF16_LE)
     f.write(u"Windows Registry Editor Version 5.00\r\n\r\n".encode('utf-16-le'))
     for (hkey, keypath, diffvalues) in diffkeys:
-        print "Writing registry key: {0}\\{1}".format(reghivestr[hkey], keypath)
+        print u"Writing registry key: {0}\\{1}".format(reghivestr[hkey], keypath)
         try:
             key = _winreg.OpenKey(hkey, keypath, 0, wow64key | _winreg.KEY_READ)
         except:
-            print "Unable to open key"
+            print u"Unable to open key"
             continue
 
         if not keypath:
@@ -377,8 +378,8 @@ def write_regfile(zf, diffkeys):
 
     f.close()
 
-    print "Writing registry diff"
-    zf.write(f.name, "snapdiff.reg")
+    print u"Writing registry diff"
+    zf.write(f.name, u"snapdiff.reg")
 
     os.remove(f.name)
 
@@ -391,7 +392,7 @@ def main():
 
     snap1 = snap_all()
 
-    raw_input("Press Enter to perform second snapshot...")
+    raw_input(u"Press Enter to perform second snapshot...")
 
     snap2 = snap_all()
 
@@ -403,33 +404,33 @@ def main():
 
 if __name__=="__main__":
 
-    parser = argparse.ArgumentParser(description="SnapDiff (c) 2016 - Christien Rioux")
-    parser.add_argument("-d", "--dir", action='append', default=[],
+    parser = argparse.ArgumentParser(description=u"SnapDiff (c) 2016 - Christien Rioux")
+    parser.add_argument("-d", "--dir", type=unicode, action='append', default=[],
                         help="Select filesystem directories to watch")
-    parser.add_argument("-r", "--reg", action='append', default=[],
+    parser.add_argument("-r", "--reg", type=unicode, action='append', default=[],
                         help="Select registry hives/subkeys to watch")
-    parser.add_argument("-o", "--out", type=str, default="snapdiff.zip", help="Name of output zipfile")
-    parser.add_argument("-x", "--exclude", action='append', default=[], help="Exclude regex patterns from filesystem")
+    parser.add_argument("-o", "--out", type=unicode, default=u"snapdiff.zip", help="Name of output zipfile")
+    parser.add_argument("-x", "--exclude", type=unicode, action='append', default=[], help="Exclude regex patterns from filesystem")
     parser.add_help = True
     args = parser.parse_args()
 
     if len(args.dir) == 0:
-        args.dir = ["C:\\"]
+        args.dir = [u"C:\\"]
     if len(args.reg) == 0:
-        args.reg = ["HKLM"]
+        args.reg = [u"HKLM"]
     if len(args.exclude) == 0:
-        args.exclude = [r"^C:\\ProgramData\\Package Cache.*",
-                        r"^C:\\Users.*",
-                        r"^C:\\Windows\\Installer.*",
-                        r"^C:\\Windows\\Logs.*",
-                        r"^C:\\Windows\\Servicing.*",
-                        r"^C:\\Windows\\SoftwareDistribution.*"]
+        args.exclude = [ur"^C:\\ProgramData\\Package Cache.*",
+                        ur"^C:\\Users.*",
+                        ur"^C:\\Windows\\Installer.*",
+                        ur"^C:\\Windows\\Logs.*",
+                        ur"^C:\\Windows\\Servicing.*",
+                        ur"^C:\\Windows\\SoftwareDistribution.*"]
 
-    if len(args.dir) == 1 and (args.dir[0]=='none' or args.dir[0]==""):
+    if len(args.dir) == 1 and (args.dir[0] == u"none" or args.dir[0] == u""):
         args.dir = []
-    if len(args.reg) == 1 and (args.reg[0]=='none' or args.reg[0]==""):
+    if len(args.reg) == 1 and (args.reg[0] == u"none" or args.reg[0] == u""):
         args.reg = []
-    if len(args.exclude) == 1 and (args.exclude[0]=='none' or args.exclude[0]==""):
+    if len(args.exclude) == 1 and (args.exclude[0] == u"none" or args.exclude[0] == u""):
         args.exclude = []
 
     for exc in args.exclude:
