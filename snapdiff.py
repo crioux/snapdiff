@@ -203,8 +203,8 @@ def diff_directory(zf, dirs1, dirs2):
         try:
             if os.path.isabs(dp):
                 # If absolute path c:\foo\bar, then write to location c\foo\bar
-                (drive, path) = dp.split(":", 1)
-                dpname = "drive_"+drive.lower()
+                (drive, path) = dp.split(u":", 1)
+                dpname = u"drive_{0}{1}".format(drive.lower(), path)
             else:
                 dpname = dp
 
