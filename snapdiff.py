@@ -303,8 +303,8 @@ def reghexstr(val):
 
 
 def regvaluestring(val, vtype):
-    if vtype == _winreg.REG_DWORD or vtype == _winreg.REG_DWORD_LITTLE_ENDIAN or vtype == _winreg.REG_DWORD_BIG_ENDIAN:
-        valstr = u"{0:08x}".format(val)
+    if vtype == _winreg.REG_DWORD:
+        valstr = u"dword:{0:08x}".format(val)
     elif vtype == _winreg.REG_EXPAND_SZ:
         valstr = reghexstr(bytearray(val, "utf-16-le"))
         if len(valstr) > 0:
