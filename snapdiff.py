@@ -39,6 +39,9 @@ def subkeys(key, numsubkeys):
 
 def walk_registry(rootkey, keypath, key=None, full_keypath=None):
 
+    if args.verbose:
+        print u"{0}\\{1}".format(reghivestr[rootkey], full_keypath)
+
     if key is None:
         key = rootkey
     if full_keypath is None:
@@ -67,6 +70,10 @@ def walk_registry(rootkey, keypath, key=None, full_keypath=None):
             next_full_keypath = full_keypath + "\\" + subkeyname
         else:
             next_full_keypath = subkeyname
+
+        # Don't do this recursively!
+        if keypath.endswith("Wow6432Node") and subkeyname == "Wow6432Node":
+            continue
 
         for x in walk_registry(rootkey,
                                subkeyname,
@@ -120,6 +127,11 @@ def snap_directory(dir):
     snap = []
 
     for root, dirs, files in os.walk(dir, topdown=False):
+        if args.verbose:
+            for d in dirs:
+                print u"{0}".format(os.path.join(root, d))
+            for f in files:
+                print u"{0}".format(os.path.join(root, f))
         snap.append((root, dirs, files))
 
     return snap
@@ -432,6 +444,7 @@ if __name__=="__main__":
     parser.add_argument("-r", "--reg", type=unicode, action='append', default=[],
                         help="Select registry hives/subkeys to watch")
     parser.add_argument("-o", "--out", type=unicode, default=u"snapdiff.zip", help="Name of output zipfile")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Print extra information about the process")
     parser.add_argument("--includedrive", action="store_true", default=False, help="Store drive letter in zipfile paths")
     parser.add_argument("--excludedir", type=unicode, action='append', default=[], help="Exclude regex patterns from filesystem")
     parser.add_argument("--excludereg", type=unicode, action='append', default=[], help="Exclude regex patterns from registry")
@@ -445,7 +458,10 @@ if __name__=="__main__":
         args.reg = [u"HKEY_LOCAL_MACHINE"]
     if len(args.excludedir) == 0:
         args.excludedir = [ur"^C:\\ProgramData\\Package Cache.*",
+                           ur"^C:\\System\ Volume\ Information.*",
                            ur"^C:\\Users.*",
+                           ur"^C:\\Documents\ and\ Settings.*",
+                           ur"^C:\\Windows\\Prefetch.*",
                            ur"^C:\\Windows\\Installer.*",
                            ur"^C:\\Windows\\Logs.*",
                            ur"^C:\\Windows\\Servicing.*",
