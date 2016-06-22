@@ -7,7 +7,7 @@ import argparse
 import hashlib
 import codecs
 import re
-import platform
+import ctypes
 
 wow64key = 0
 re_excludedir = []
@@ -19,6 +19,10 @@ def Is64Windows():
 
 if Is64Windows():
     wow64key = _winreg.KEY_WOW64_64KEY
+    Wow64DisableWow64FsRedirection = ctypes.windll.kernel32.Wow64DisableWow64FsRedirection
+    old_value = ctypes.c_long()
+    Wow64DisableWow64FsRedirection(ctypes.byref(old_value))
+
 
 def subkeys(key, numsubkeys):
 
@@ -218,6 +222,7 @@ def diff_directory(zf, dirs1, dirs2):
                 dpname = dp
 
             zf.write(dp, dpname)
+
             print "Added: " + dp
         except:
             print "Skipped: " + dp
@@ -413,7 +418,7 @@ def main():
 
     snap2 = snap_all()
 
-    with zipfile.ZipFile(args.out, 'w', zipfile.ZIP_DEFLATED, True) as zf:
+    with zipfile.ZipFile(args.out, "w", zipfile.ZIP_DEFLATED, True) as zf:
         print "Zipping diff to: " + args.out
         diff_all(zf, snap1, snap2)
 
